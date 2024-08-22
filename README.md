@@ -2,7 +2,7 @@
 
 Version: 0.1.2
 
-A Python implementation of YATL (Yet Another Tentacle Language) for defining and managing state machines.
+A Python implementation of 🦑 YATL (Yet Another Tentacle Language) for defining and managing state machines.
 
 ## Installation
 
