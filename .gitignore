@@ -3,5 +3,5 @@ venv/
 Pipfile*
 .vscode/
 dist/
-yatl.egg-info/
+yatl_python.egg-info/
 .pytest_cache/

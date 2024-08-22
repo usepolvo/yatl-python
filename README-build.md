@@ -25,5 +25,5 @@ python -m build src
 # Upload package to Test PyPi
 
 ```bash
-python -m twine upload --repository yatl src/dist/*
+python -m twine upload --repository yatl-test src/dist/*
 ```
