@@ -1,0 +1,7 @@
+.DS_Store
+venv/
+Pipfile*
+.vscode/
+dist/
+yatl.egg-info/
+.pytest_cache/
