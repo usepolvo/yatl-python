@@ -6,7 +6,7 @@ on:
     branches:
       - develop
     paths-ignore:
-      - "README*.md"
+      - "README.md"
       - ".gitignore"
       - ".github/**"
       - ".vscode/**"
