@@ -7,7 +7,7 @@ A Python implementation of 🦑 YATL (Yet Another Tentacle Language) for definin
 ## Installation
 
 ```bash
-pip install yatl-python
+pip install yatl
 ```
 
 ## Usage
