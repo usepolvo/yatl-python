@@ -3,5 +3,6 @@ venv/
 Pipfile*
 .vscode/
 dist/
-yatl.egg-info/
+usepolvo_yatl.egg-info/
 .pytest_cache/
+__pycache__/
