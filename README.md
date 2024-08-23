@@ -1,6 +1,6 @@
 # yatl-python
 
-Version: 0.1.2
+Version: 0.1.0
 
 A Python implementation of 🦑 YATL (Yet Another Tentacle Language) for defining and managing state machines.
 
