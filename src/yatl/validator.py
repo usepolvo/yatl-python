@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Any, Dict
 
 
 class YATLValidator:
@@ -10,12 +10,14 @@ class YATLValidator:
 
         self._validate_structure(parsed_yatl)
         self._validate_states(parsed_yatl.get("states", {}))
+        self._validate_actions(parsed_yatl.get("actions", {}))
+        self._validate_variables(parsed_yatl.get("variables", {}))
         self._validate_initial_state(parsed_yatl)
 
         return len(self.errors) == 0
 
     def _validate_structure(self, data: Dict[str, Any]):
-        required_keys = ["name", "initial_state", "states"]
+        required_keys = ["name", "description", "initial_state", "states", "actions", "variables"]
         for key in required_keys:
             if key not in data:
                 self.errors.append(f"Missing required key: {key}")
@@ -32,35 +34,44 @@ class YATLValidator:
         if "type" not in state_data:
             self.errors.append(f"State '{state_name}' is missing 'type'")
 
-        if "transitions" in state_data:
-            if not isinstance(state_data["transitions"], list):
-                self.errors.append(f"Transitions for state '{state_name}' must be a list")
-            else:
-                for transition in state_data["transitions"]:
-                    if "event" not in transition or "target" not in transition:
-                        self.errors.append(f"Invalid transition in state '{state_name}': {transition}")
+        if state_data.get("type") == "task":
+            if "action" not in state_data:
+                self.errors.append(f"Task state '{state_name}' is missing 'action'")
+            if "next" not in state_data:
+                self.errors.append(f"Task state '{state_name}' is missing 'next'")
+
+        elif state_data.get("type") == "choice":
+            if "choices" not in state_data or not isinstance(state_data["choices"], list):
+                self.errors.append(f"Choice state '{state_name}' must have a 'choices' list")
+            if "default" not in state_data:
+                self.errors.append(f"Choice state '{state_name}' is missing 'default'")
+
+        elif state_data.get("type") == "loop":
+            if "collection" not in state_data:
+                self.errors.append(f"Loop state '{state_name}' is missing 'collection'")
+            if "iterator" not in state_data:
+                self.errors.append(f"Loop state '{state_name}' is missing 'iterator'")
+            if "body" not in state_data:
+                self.errors.append(f"Loop state '{state_name}' is missing 'body'")
+
+    def _validate_actions(self, actions: Dict[str, Any]):
+        if not isinstance(actions, dict):
+            self.errors.append("'actions' must be a dictionary")
+            return
+
+        for action_name, action_data in actions.items():
+            if "description" not in action_data:
+                self.errors.append(f"Action '{action_name}' is missing 'description'")
+            if "language" not in action_data:
+                self.errors.append(f"Action '{action_name}' is missing 'language'")
+            if "code" not in action_data:
+                self.errors.append(f"Action '{action_name}' is missing 'code'")
+
+    def _validate_variables(self, variables: Dict[str, Any]):
+        if not isinstance(variables, dict):
+            self.errors.append("'variables' must be a dictionary")
 
     def _validate_initial_state(self, data: Dict[str, Any]):
         initial_state = data.get("initial_state")
         if initial_state not in data.get("states", {}):
             self.errors.append(f"Initial state '{initial_state}' is not defined in states")
-
-
-# Usage example
-validator = YATLValidator()
-parsed_yatl = {
-    "name": "TrafficLight",
-    "initial_state": "Red",
-    "states": {
-        "Red": {"type": "normal", "transitions": [{"event": "TimerExpired", "target": "Green"}]},
-        "Green": {"type": "normal", "transitions": [{"event": "TimerExpired", "target": "Yellow"}]},
-        "Yellow": {"type": "normal", "transitions": [{"event": "TimerExpired", "target": "Red"}]},
-    },
-}
-
-is_valid = validator.validate(parsed_yatl)
-print(f"YATL is valid: {is_valid}")
-if not is_valid:
-    print("Validation errors:")
-    for error in validator.errors:
-        print(f"- {error}")

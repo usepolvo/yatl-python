@@ -25,5 +25,5 @@ python -m build src
 # Upload package to Test PyPi
 
 ```bash
-python -m twine upload --repository usepolvo-yatl-test src/dist/*
+python -m twine upload --repository usepolvo-yatl src/dist/*
 ```

@@ -1,34 +1,38 @@
+import unittest
+
 from src.yatl.validator import YATLValidator
 
 
-def test_validator_valid_yatl():
-    validator = YATLValidator()
-    valid_yatl = {
-        "name": "TrafficLight",
-        "initial_state": "Red",
-        "states": {
-            "Red": {"type": "normal", "transitions": [{"event": "TimerExpired", "target": "Green"}]},
-            "Green": {"type": "normal", "transitions": [{"event": "TimerExpired", "target": "Red"}]},
-        },
-    }
+class TestYATLValidator(unittest.TestCase):
+    def setUp(self):
+        self.validator = YATLValidator()
 
-    assert validator.validate(valid_yatl) == True
-    assert len(validator.errors) == 0
+    def test_validate_valid_yatl(self):
+        valid_yatl = {
+            "name": "TestWorkflow",
+            "description": "A test workflow",
+            "initial_state": "Start",
+            "states": {"Start": {"type": "task", "action": "sayHello", "next": "End"}, "End": {"type": "end"}},
+            "actions": {
+                "sayHello": {"description": "Say hello", "language": "python", "code": 'print("Hello, World!")'}
+            },
+            "variables": {"greeting": "string"},
+        }
+        self.assertTrue(self.validator.validate(valid_yatl))
+        self.assertEqual(len(self.validator.errors), 0)
+
+    def test_validate_invalid_yatl(self):
+        invalid_yatl = {
+            "name": "InvalidWorkflow",
+            "description": "An invalid workflow",
+            "initial_state": "NonExistentState",
+            "states": {"Start": {"type": "unknown", "next": "End"}, "End": {"type": "end"}},
+            "actions": {"missingFields": {}},
+            "variables": "not a dictionary",
+        }
+        self.assertFalse(self.validator.validate(invalid_yatl))
+        self.assertGreater(len(self.validator.errors), 0)
 
 
-def test_validator_invalid_yatl():
-    validator = YATLValidator()
-    invalid_yatl = {
-        "name": "InvalidTrafficLight",
-        "initial_state": "Purple",  # Invalid initial state
-        "states": {
-            "Red": {"transitions": [{"event": "TimerExpired", "target": "Green"}]},  # Missing 'type'
-            "Green": {"type": "normal", "transitions": "not a list"},  # Invalid transitions format
-        },
-    }
-
-    assert validator.validate(invalid_yatl) == False
-    assert len(validator.errors) > 0
-
-
-# Add more tests as needed
+if __name__ == "__main__":
+    unittest.main()

@@ -1,25 +1,57 @@
+import unittest
+
 from src.yatl.compiler import YATLCompiler
 
 
-def test_compiler_basic():
-    compiler = YATLCompiler()
-    parsed_yatl = {
-        "name": "TrafficLight",
-        "initial_state": "Red",
-        "states": {
-            "Red": {"type": "normal", "transitions": [{"event": "TimerExpired", "target": "Green"}]},
-            "Green": {"type": "normal", "transitions": [{"event": "TimerExpired", "target": "Red"}]},
-        },
-    }
+class TestYATLCompiler(unittest.TestCase):
+    def setUp(self):
+        self.compiler = YATLCompiler()
 
-    compiled_yatl = compiler.compile(parsed_yatl)
+    def test_compile_task_state(self):
+        parsed_yatl = {
+            "name": "TestWorkflow",
+            "description": "A test workflow",
+            "initial_state": "Start",
+            "states": {"Start": {"type": "task", "action": "sayHello", "next": "End"}, "End": {"type": "end"}},
+            "actions": {
+                "sayHello": {"description": "Say hello", "language": "python", "code": 'print("Hello, World!")'}
+            },
+            "variables": {"greeting": "string"},
+        }
+        compiled = self.compiler.compile(parsed_yatl)
+        self.assertEqual(compiled["name"], "TestWorkflow")
+        self.assertIn("Start", compiled["states"])
+        self.assertEqual(compiled["states"]["Start"]["type"], "task")
+        self.assertEqual(compiled["states"]["Start"]["action"], "sayHello")
 
-    assert compiled_yatl["name"] == "TrafficLight"
-    assert compiled_yatl["initial_state"] == "Red"
-    assert "Red" in compiled_yatl["states"]
-    assert "Green" in compiled_yatl["states"]
-    assert compiled_yatl["states"]["Red"]["transitions"]["TimerExpired"] == "Green"
-    assert compiled_yatl["states"]["Green"]["transitions"]["TimerExpired"] == "Red"
+    def test_compile_choice_state(self):
+        parsed_yatl = {
+            "name": "ChoiceWorkflow",
+            "description": "A workflow with a choice",
+            "initial_state": "Start",
+            "states": {
+                "Start": {
+                    "type": "choice",
+                    "choices": [
+                        {
+                            "condition": {"variable": "$.weather", "operator": "equals", "value": "sunny"},
+                            "next": "GoOutside",
+                        }
+                    ],
+                    "default": "StayInside",
+                },
+                "GoOutside": {"type": "end"},
+                "StayInside": {"type": "end"},
+            },
+            "actions": {},
+            "variables": {"weather": "string"},
+        }
+        compiled = self.compiler.compile(parsed_yatl)
+        self.assertIn("Start", compiled["states"])
+        self.assertEqual(compiled["states"]["Start"]["type"], "choice")
+        self.assertIn("choices", compiled["states"]["Start"])
+        self.assertEqual(compiled["states"]["Start"]["default"], "StayInside")
 
 
-# Add more tests as needed
+if __name__ == "__main__":
+    unittest.main()

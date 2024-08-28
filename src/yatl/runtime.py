@@ -1,65 +1,89 @@
-from typing import Dict, Any, List, Callable
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Any, Dict
 
 
 class YATLRuntime:
     def __init__(self, compiled_yatl: Dict[str, Any]):
         self.name = compiled_yatl["name"]
+        self.description = compiled_yatl["description"]
         self.states = compiled_yatl["states"]
+        self.actions = compiled_yatl["actions"]
+        self.variables = compiled_yatl["variables"]
         self.current_state = compiled_yatl["initial_state"]
-        self.action_handlers: Dict[str, Callable] = {}
+        self.context = {var_name: None for var_name in self.variables}
 
-    def register_action(self, action_name: str, handler: Callable):
-        self.action_handlers[action_name] = handler
+    def execute(self):
+        while self.current_state:
+            state = self.states[self.current_state]
+            if state["type"] == "task":
+                self._execute_action(state["action"])
+                self.current_state = state.get("next")
+            elif state["type"] == "choice":
+                self.current_state = self._evaluate_choice(state)
+            elif state["type"] == "loop":
+                self._execute_loop(state)
+                self.current_state = state.get("next")
+            elif state["type"] == "parallel":
+                self._execute_parallel(state)
+                self.current_state = state.get("next")
+            elif state["type"] == "end":
+                break
 
-    def trigger_event(self, event: str) -> bool:
-        if event not in self.states[self.current_state]["transitions"]:
-            return False
-
-        next_state = self.states[self.current_state]["transitions"][event]
-        self._exit_state(self.current_state)
-        self.current_state = next_state
-        self._enter_state(self.current_state)
-        return True
-
-    def _exit_state(self, state: str):
-        for action in self.states[state]["on_exit"]:
-            self._execute_action(action)
-
-    def _enter_state(self, state: str):
-        for action in self.states[state]["on_enter"]:
-            self._execute_action(action)
-
-    def _execute_action(self, action: str):
-        if action in self.action_handlers:
-            self.action_handlers[action]()
+    def _execute_action(self, action_name: str):
+        action = self.actions[action_name]
+        if action["language"] == "python":
+            exec(action["code"], {"context": self.context})
         else:
-            print(f"Warning: No handler for action '{action}'")
+            print(f"Unsupported language: {action['language']}")
 
+    def _evaluate_choice(self, state: Dict[str, Any]) -> str:
+        for choice in state["choices"]:
+            if self._evaluate_condition(choice["condition"]):
+                return choice["next"]
+        return state["default"]
 
-# Usage example
-def turn_on_red():
-    print("Red light on")
+    def _evaluate_condition(self, condition: Dict[str, Any]) -> bool:
+        variable = self.context[condition["variable"]]
+        operator = condition["operator"]
+        value = condition["value"]
 
+        if operator == "equals":
+            return variable == value
+        elif operator == "not_equals":
+            return variable != value
+        elif operator == "greater_than":
+            return variable > value
+        elif operator == "less_than":
+            return variable < value
+        elif operator == "contains":
+            return value in variable
+        else:
+            raise ValueError(f"Unsupported operator: {operator}")
 
-def turn_on_green():
-    print("Green light on")
+    def _execute_loop(self, state: Dict[str, Any]):
+        collection = self.context[state["collection"]]
+        for item in collection:
+            self.context[state["iterator"]] = item
+            self._execute_state(state["body"])
 
+    def _execute_parallel(self, state: Dict[str, Any]):
+        with ThreadPoolExecutor() as executor:
+            futures = []
+            for branch in state["branches"]:
+                future = executor.submit(self._execute_state, branch)
+                futures.append(future)
 
-compiled_yatl = {
-    "name": "TrafficLight",
-    "initial_state": "Red",
-    "states": {
-        "Red": {"type": "normal", "on_enter": ["turnOnRed"], "on_exit": [], "transitions": {"TimerExpired": "Green"}},
-        "Green": {"type": "normal", "on_enter": ["turnOnGreen"], "on_exit": [], "transitions": {"TimerExpired": "Red"}},
-    },
-}
+            for future in as_completed(futures):
+                future.result()  # This will raise an exception if the branch execution failed
 
-runtime = YATLRuntime(compiled_yatl)
-runtime.register_action("turnOnRed", turn_on_red)
-runtime.register_action("turnOnGreen", turn_on_green)
-
-print(f"Current state: {runtime.current_state}")
-runtime.trigger_event("TimerExpired")
-print(f"Current state: {runtime.current_state}")
-runtime.trigger_event("TimerExpired")
-print(f"Current state: {runtime.current_state}")
+    def _execute_state(self, state: Dict[str, Any]):
+        if state["type"] == "task":
+            self._execute_action(state["action"])
+        elif state["type"] == "choice":
+            next_state = self._evaluate_choice(state)
+            if next_state:
+                self._execute_state(self.states[next_state])
+        elif state["type"] == "loop":
+            self._execute_loop(state)
+        elif state["type"] == "parallel":
+            self._execute_parallel(state)

@@ -1,5 +1,6 @@
+from typing import Any, Dict
+
 import yaml
-from typing import Dict, Any
 
 
 class YATLParser:
@@ -15,7 +16,7 @@ class YATLParser:
             raise ValueError(f"Invalid YATL: {str(e)}")
 
     def _validate_structure(self, data: Dict[str, Any]):
-        required_keys = ["name", "initial_state", "states"]
+        required_keys = ["name", "description", "initial_state", "states", "actions", "variables"]
         for key in required_keys:
             if key not in data:
                 raise ValueError(f"Missing required key: {key}")
@@ -23,21 +24,8 @@ class YATLParser:
         if not isinstance(data["states"], dict):
             raise ValueError("'states' must be a dictionary")
 
-        # Add more structure validation as needed
+        if not isinstance(data["actions"], dict):
+            raise ValueError("'actions' must be a dictionary")
 
-
-# Usage example
-parser = YATLParser()
-yatl_content = """
-name: TrafficLight
-initial_state: Red
-states:
-  Red:
-    type: normal
-    on_enter: [turnOnRed]
-    transitions:
-      - event: TimerExpired
-        target: Green
-"""
-parsed_yatl = parser.parse(yatl_content)
-print(parsed_yatl)
+        if not isinstance(data["variables"], dict):
+            raise ValueError("'variables' must be a dictionary")
