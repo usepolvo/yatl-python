@@ -6,13 +6,18 @@ class YATLRuntime:
     def __init__(self, compiled_yatl: Dict[str, Any]):
         self.name = compiled_yatl["name"]
         self.description = compiled_yatl["description"]
+        self.version = compiled_yatl.get("version", "1.0")
+        self.triggers = compiled_yatl.get("triggers", [])
         self.states = compiled_yatl["states"]
         self.actions = compiled_yatl["actions"]
         self.variables = compiled_yatl["variables"]
         self.current_state = compiled_yatl["initial_state"]
         self.context = {var_name: None for var_name in self.variables}
 
-    def execute(self):
+    def execute(self, trigger_data: Dict[str, Any] = None):
+        if trigger_data:
+            self.context["trigger"] = trigger_data
+
         while self.current_state:
             state = self.states[self.current_state]
             if state["type"] == "task":
@@ -28,6 +33,8 @@ class YATLRuntime:
                 self.current_state = state.get("next")
             elif state["type"] == "end":
                 break
+
+        return self.context
 
     def _execute_action(self, action_name: str):
         action = self.actions[action_name]

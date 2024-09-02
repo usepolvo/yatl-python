@@ -3,6 +3,7 @@ from yatl.utils import yatl_from_string
 yatl_content = """
 name: NumberSumLoop
 description: "Sum a list of numbers"
+version: "1.2"
 initial_state: InitializeSum
 
 states:

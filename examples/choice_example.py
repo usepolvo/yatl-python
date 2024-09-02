@@ -3,6 +3,7 @@ from yatl.utils import yatl_from_string
 yatl_content = """
 name: WeatherChoice
 description: "Choose activity based on weather"
+version: "1.2"
 initial_state: CheckWeather
 
 states:

@@ -1,12 +1,12 @@
 # yatl-python
 
-Version: 0.2.2
+Version: 0.3.0
 
-A Python implementation of 🐙 YATL (Yet Another Tentacle Language) for defining and managing state machines.
+A Python implementation of 🐙 YATL (Yet Another Tentacle Language) for defining and managing state machines and workflows.
 
 ## Introduction
 
-YATL (Yet Another Tentacle Language) is an innovative, octopus-themed markup language designed specifically for defining and managing state machines. This Python package provides tools to parse, compile, validate, and execute YATL workflows.
+YATL (Yet Another Tentacle Language) is an innovative, octopus-themed markup language designed specifically for defining and managing state machines and workflows. This Python package provides tools to parse, compile, validate, and execute YATL workflows.
 
 ## Installation
 
@@ -20,10 +20,11 @@ pip install yatl-python
 - YATL Compiler: Transforms the YATL AST into executable code
 - YATL Validator: Checks YATL files for syntax and semantic correctness
 - YATL Runtime: Executes the compiled YATL workflows
+- Trigger System: Supports HTTP, Webhook, Schedule, and Cloud Event triggers
 
 ## Usage
 
-Here's a simple example of how to use yatl-python:
+Here's a simple example of how to use yatl-python with YATL 1.2 features:
 
 ```python
 from yatl.parser import YATLParser
@@ -34,7 +35,11 @@ from yatl.runtime import YATLRuntime
 # YATL content
 yatl_content = """
 name: SimpleWorkflow
-description: "A simple workflow example"
+description: "A simple workflow example with a schedule trigger"
+version: "1.2"
+triggers:
+  - type: schedule
+    cron: "0 * * * *"  # Run every hour
 initial_state: Start
 
 states:
@@ -58,7 +63,7 @@ actions:
     description: "Say hello"
     language: python
     code: |
-      print("Hello!")
+      print(f"Hello! Triggered at {context['trigger']['timestamp']}")
 
   sayWorking:
     description: "Say working"
@@ -92,12 +97,12 @@ compiled_yatl = compiler.compile(parsed_yatl)
 
 # Execute YATL
 runtime = YATLRuntime(compiled_yatl)
-runtime.execute()
+runtime.execute(trigger_data={"type": "schedule", "timestamp": "2023-06-01T12:00:00Z"})
 ```
 
 ## Advanced Features
 
-YATL supports various state types and control structures:
+YATL 1.2 supports various state types, control structures, and triggers:
 
 - Task States
 - Choice States
@@ -105,6 +110,7 @@ YATL supports various state types and control structures:
 - Parallel States
 - End States
 - Fail States
+- Triggers: HTTP, Webhook, Schedule, Cloud Event
 
 For more detailed examples and usage of these features, please refer to the [docs](docs/) directory.
 

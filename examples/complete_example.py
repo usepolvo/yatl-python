@@ -3,6 +3,7 @@ from yatl.utils import yatl_from_string
 yatl_content = """
 name: PizzaOrderingSystem
 description: "A comprehensive pizza ordering system using YATL"
+version: "1.2"
 initial_state: WelcomeCustomer
 
 states:

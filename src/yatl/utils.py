@@ -1,7 +1,7 @@
 # src/yatl/utils.py
 
 import os
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from .compiler import YATLCompiler
 from .parser import YATLParser
@@ -52,39 +52,42 @@ def process_yatl(yatl_content: str) -> Dict[str, Any]:
     if not validator.validate(parsed_yatl):
         raise ValueError(f"YATL validation failed: {validator.errors}")
 
-    return compiler.compile(parsed_yatl)
+    compiled_yatl = compiler.compile(parsed_yatl)
+    return compiled_yatl
 
 
-def execute_yatl(compiled_yatl: Dict[str, Any]) -> Dict[str, Any]:
+def execute_yatl(compiled_yatl: Dict[str, Any], trigger_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
     Execute compiled YATL.
 
     :param compiled_yatl: Compiled YATL as a dictionary
+    :param trigger_data: Optional trigger data
     :return: The final context after execution
     """
     runtime = YATLRuntime(compiled_yatl)
-    runtime.execute()
-    return runtime.context
+    return runtime.execute(trigger_data)
 
 
-def load_and_execute_yatl(file_path: str) -> Dict[str, Any]:
+def load_and_execute_yatl(file_path: str, trigger_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
     Load a YATL file, process it, and execute it.
 
     :param file_path: Path to the YATL file
+    :param trigger_data: Optional trigger data
     :return: The final context after execution
     """
     yatl_content = load_yatl_file(file_path)
     compiled_yatl = process_yatl(yatl_content)
-    return execute_yatl(compiled_yatl)
+    return execute_yatl(compiled_yatl, trigger_data)
 
 
-def yatl_from_string(yatl_content: str) -> Dict[str, Any]:
+def yatl_from_string(yatl_content: str, trigger_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
     Process and execute YATL from a string.
 
     :param yatl_content: YATL content as a string
+    :param trigger_data: Optional trigger data
     :return: The final context after execution
     """
     compiled_yatl = process_yatl(yatl_content)
-    return execute_yatl(compiled_yatl)
+    return execute_yatl(compiled_yatl, trigger_data)

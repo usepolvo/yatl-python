@@ -3,6 +3,7 @@ from yatl.utils import yatl_from_string
 yatl_content = """
 name: ParallelTasks
 description: "Execute tasks in parallel"
+version: "1.2"
 initial_state: Start
 
 states:

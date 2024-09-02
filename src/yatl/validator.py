@@ -13,6 +13,7 @@ class YATLValidator:
         self._validate_actions(parsed_yatl.get("actions", {}))
         self._validate_variables(parsed_yatl.get("variables", {}))
         self._validate_initial_state(parsed_yatl)
+        self._validate_triggers(parsed_yatl.get("triggers", []))
 
         return len(self.errors) == 0
 
@@ -75,3 +76,50 @@ class YATLValidator:
         initial_state = data.get("initial_state")
         if initial_state not in data.get("states", {}):
             self.errors.append(f"Initial state '{initial_state}' is not defined in states")
+
+    def _validate_triggers(self, triggers: list):
+        if not isinstance(triggers, list):
+            self.errors.append("'triggers' must be a list")
+            return
+
+        for trigger in triggers:
+            if not isinstance(trigger, dict):
+                self.errors.append("Each trigger must be a dictionary")
+                continue
+
+            if "type" not in trigger:
+                self.errors.append("Each trigger must have a 'type'")
+                continue
+
+            if trigger["type"] == "http":
+                self._validate_http_trigger(trigger)
+            elif trigger["type"] == "webhook":
+                self._validate_webhook_trigger(trigger)
+            elif trigger["type"] == "schedule":
+                self._validate_schedule_trigger(trigger)
+            elif trigger["type"] == "cloud_event":
+                self._validate_cloud_event_trigger(trigger)
+            else:
+                self.errors.append(f"Unknown trigger type: {trigger['type']}")
+
+    def _validate_http_trigger(self, trigger):
+        required_keys = ["path", "method"]
+        self._validate_trigger_keys(trigger, required_keys)
+
+    def _validate_webhook_trigger(self, trigger):
+        required_keys = ["event", "source"]
+        self._validate_trigger_keys(trigger, required_keys)
+
+    def _validate_schedule_trigger(self, trigger):
+        required_keys = ["cron"]
+        self._validate_trigger_keys(trigger, required_keys)
+
+    def _validate_cloud_event_trigger(self, trigger):
+        required_keys = ["type", "source"]
+        self._validate_trigger_keys(trigger, required_keys)
+        # Note: For cloud events, 'type' refers to the event type, not the trigger type
+
+    def _validate_trigger_keys(self, trigger, required_keys):
+        for key in required_keys:
+            if key not in trigger:
+                self.errors.append(f"Trigger of type '{trigger['type']}' is missing required key: {key}")

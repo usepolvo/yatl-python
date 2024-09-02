@@ -9,11 +9,15 @@ class YATLCompiler:
         compiled_yatl = {
             "name": parsed_yatl["name"],
             "description": parsed_yatl["description"],
+            "version": parsed_yatl.get("version", "1.0"),
             "initial_state": parsed_yatl["initial_state"],
             "states": {},
             "actions": {},
             "variables": parsed_yatl["variables"],
         }
+
+        if "triggers" in parsed_yatl:
+            compiled_yatl["triggers"] = parsed_yatl["triggers"]
 
         for state_name, state_data in parsed_yatl["states"].items():
             compiled_state = self._compile_state(state_name, state_data)
